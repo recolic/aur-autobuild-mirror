@@ -21,7 +21,8 @@ repo_upstreams=(
 aur_upstreams='pikaur frpc frps azure-cli unzip-iconv create_ap snakesocks teamviewer remarkable goland clion gnome-terminal-transparency'
 # intellij-idea-ce rider graftcp # gractcp failure
 
-build_outdir="mirrors/recolic-aur"
+build_outdir="mirrors/aur"
+repo_name=recolic-aur
 
 function sync_aur () {
     echo "Running aur autobuild..."
@@ -71,11 +72,11 @@ function dedup_and_build_index () {
     cd -
 
     # build index.db
-    sudo docker run -i --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && cd /home/builder/.cache/pikaur/pkg && repo-add recolic-aur.db.tar.gz *.pkg.tar.*"
+    sudo docker run -i --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && cd /home/builder/.cache/pikaur/pkg && repo-add $repo_name.db.tar.gz *.pkg.tar.*"
     return $?
 }
 
-
+mkdir -p "$build_outdir"
 sync_aur || echo AUR-gg
 sync_repo || echo REPO-gg
 sync_http || echo HTTP-gg

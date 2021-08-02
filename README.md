@@ -15,9 +15,9 @@ docker build -t your-name/pikaur .
 
 2. Put this directory to your server. Assume you're placing this directory to `/srv/my-mirror-site`
 
-3. Create a directory `mirrors/output` (you can name it as anything you want), and modify the `build_outdir` variable in aur-sync.sh. Also change the `recolic-aur` after the `repo-add` command, to your repo name. 
+3. Modify the `build_outdir` and `repo_name` variable in aur-sync.sh. 
 
-You should know how to publish the directory to your web server. 
+You should know how to publish the output directory with your web server. 
 
 4. Add a crontab line and enjoy! 
 
