@@ -21,7 +21,7 @@ repo_upstreams=(
 aur_upstreams='pikaur frpc frps azure-cli unzip-iconv create_ap snakesocks teamviewer remarkable goland clion gnome-terminal-transparency'
 # intellij-idea-ce rider graftcp # gractcp failure
 
-build_outdir="mirrors/aur"
+build_outdir="mirrors/recolic-aur"
 repo_name=recolic-aur
 
 function sync_aur () {
