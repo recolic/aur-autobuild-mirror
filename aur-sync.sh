@@ -18,7 +18,7 @@ repo_upstreams=(
 )
 
 # Please place simple, important, SMALL packages first. Place error-prone packages last. 
-aur_upstreams='pikaur frpc frps azure-cli unzip-iconv create_ap snakesocks teamviewer remarkable goland clion gnome-terminal-transparency'
+aur_upstreams='pikaur frpc frps azure-cli unzip-iconv create_ap snakesocks teamviewer remarkable goland goland-jre clion gnome-terminal-transparency'
 # intellij-idea-ce rider graftcp # gractcp failure
 
 build_outdir="mirrors/recolic-aur"
