@@ -18,8 +18,24 @@ repo_upstreams=(
 )
 
 # Please place simple, important, SMALL packages first. Place error-prone packages last. 
-aur_upstreams='pikaur frpc frps azure-cli unzip-iconv create_ap snakesocks teamviewer remarkable goland goland-jre clion gnome-terminal-transparency'
-# intellij-idea-ce rider graftcp # gractcp failure
+aur_upstreams=(
+    pikaur
+    frpc
+    frps
+    azure-cli
+    create_ap
+    asix-ax88179-dkms
+    snakesocks
+    teamviewer
+    remarkable
+    goland
+    goland-jre
+    clion
+    clion-jre
+    gnome-terminal-transparency
+    shared-bootdir-helper
+    chrome-gnome-shell
+)
 
 build_outdir="mirrors/recolic-aur"
 repo_name=recolic-aur
@@ -27,9 +43,12 @@ repo_name=recolic-aur
 function sync_aur () {
     echo "Running aur autobuild..."
 
-    # pikaur would skip if the package is already up-to-date. 
-    sudo docker run -i --cpus 1.2 --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $aur_upstreams"
-    return $?
+    # Use the external loop to force pikaur to skip failed packages. 
+    for ele in "${aur_upstreams[@]}"; do
+        # pikaur would skip if the package is already up-to-date. 
+        sudo docker run -i --cpus 1.2 --rm -v "$(pwd)/mirrors/recolic-aur":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $ele"
+        [[ $? != 0 ]] && echo "WARNING: Failed to build $ele"
+    done
 }
 
 function sync_http () {
