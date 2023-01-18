@@ -2,9 +2,9 @@
 
 http_upstreams=(
     # http upstreams has no auto-update
-    'https://github.com/fphoenix88888/ttf-mswin10-arch/raw/master/ttf-ms-win10-zh_cn-10.0.18362.116-2-any.pkg.tar.xz'
-    'https://github.com/fphoenix88888/ttf-mswin10-arch/raw/master/ttf-ms-win10-zh_tw-10.0.18362.116-2-any.pkg.tar.xz'
-    'https://github.com/fphoenix88888/ttf-mswin10-arch/raw/master/ttf-ms-win10-10.0.18362.116-2-any.pkg.tar.xz'
+    'https://raw.githubusercontent.com/fphoenix88888/ttf-mswin10-arch/master/ttf-ms-win10-zh_tw-10.0.19043.1055-1-any.pkg.tar.zst'
+    'https://raw.githubusercontent.com/fphoenix88888/ttf-mswin10-arch/master/ttf-ms-win10-zh_cn-10.0.19043.1055-1-any.pkg.tar.zst'
+    'https://raw.githubusercontent.com/fphoenix88888/ttf-mswin10-arch/master/ttf-ms-win10-10.0.19043.1055-1-any.pkg.tar.zst'
 )
 repo_upstreams=(
     # Take care of the tailing "/"!!!
@@ -35,6 +35,7 @@ aur_upstreams=(
     gnome-terminal-transparency
     shared-bootdir-helper
     chrome-gnome-shell
+    oreo-cursors-git
 )
 
 build_outdir="mirrors/recolic-aur"
@@ -46,7 +47,7 @@ function sync_aur () {
     # Use the external loop to force pikaur to skip failed packages. 
     for ele in "${aur_upstreams[@]}"; do
         # pikaur would skip if the package is already up-to-date. 
-        sudo docker run -i --cpus 1.2 --rm -v "$(pwd)/mirrors/recolic-aur":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $ele"
+        sudo docker run -i --cpus 1.2 --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $ele"
         [[ $? != 0 ]] && echo "WARNING: Failed to build $ele"
     done
 }
