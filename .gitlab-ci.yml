@@ -23,17 +23,13 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: "" # not to start over tls
 
-#stages:
-#  - build
-#  - upload
-
 build:
   stage: build
   script:
     - cd docker-pikaur/ && docker build -t recolic/pikaur .
 
 upload:
-  stage: upload
+  stage: deploy
   script:
     - docker login -u recolic -p "$docker_pswd"
     - docker push recolic/pikaur
