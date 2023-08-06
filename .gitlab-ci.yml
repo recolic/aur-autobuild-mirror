@@ -23,6 +23,10 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: "" # not to start over tls
 
+stages:
+  - build
+  - upload
+
 build:
   stage: build
   script:
