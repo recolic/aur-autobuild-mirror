@@ -26,7 +26,12 @@ variables:
 build:
   stage: build
   script:
-    - docker login -u recolic -p "$docker_pswd"
     - cd docker-pikaur/ && docker build -t recolic/pikaur .
+
+upload:
+  stage: deploy
+  script:
+    - docker login -u recolic -p "$docker_pswd"
     - docker push recolic/pikaur
+  allow_failure: true
 

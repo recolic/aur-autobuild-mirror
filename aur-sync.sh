@@ -96,6 +96,9 @@ function dedup_and_build_index () {
     return $?
 }
 
+# Must update arch toolchain
+docker pull recolic/pikaur
+
 mkdir -p "$build_outdir"
 sync_aur || echo AUR-gg
 sync_repo || echo REPO-gg
