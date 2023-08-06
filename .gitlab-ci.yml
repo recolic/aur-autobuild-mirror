@@ -24,10 +24,12 @@ variables:
   DOCKER_TLS_CERTDIR: "" # not to start over tls
 
 build:
+  stage: build
   script:
     - cd docker-pikaur/ && docker build -t recolic/pikaur .
 
 upload:
+  stage: upload
   script:
     - [[ "$docker_pswd" != "" ]] && docker login -u recolic -p "$docker_pswd"
     - docker push recolic/pikaur
