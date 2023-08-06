@@ -21,9 +21,12 @@ variables:
   # `/certs/client` to share between the service and job
   # container, thanks to volume mount from config.toml
   DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ""
+  DOCKER_TLS_CERTDIR: "" # not to start over tls
 
 build:
   stage: build
   script:
+    - docker login -u recolic -p "$docker_pswd"
     - cd docker-pikaur/ && docker build -t recolic/pikaur .
+    - docker push recolic/pikaur
+
