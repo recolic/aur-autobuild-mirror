@@ -37,9 +37,14 @@ aur_upstreams=(
     chrome-gnome-shell
     oreo-cursors-git
 )
+# Some packages must be rebuilt even if it doesn't upgrade. It applies for all python packages.
+aur_upstreams_force_rebuild=(
+    pikaur
+    azure-cli
+)
 
-build_outdir="mirrors/recolic-aur"
 repo_name=recolic-aur
+build_outdir="mirrors/$repo_name"
 
 function sync_aur () {
     echo "Running aur autobuild..."
@@ -96,8 +101,11 @@ function dedup_and_build_index () {
     return $?
 }
 
-# Must update arch toolchain
+# Must update arch toolchain and clean up some aur packages
 docker pull recolic/pikaur
+for item in "${aur_upstreams_force_rebuild[@]}"; do
+    rm -f "mirrors/recolic-aur/$item"*
+done
 
 mkdir -p "$build_outdir"
 sync_aur || echo AUR-gg
