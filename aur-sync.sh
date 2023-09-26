@@ -102,6 +102,7 @@ function dedup_and_build_index () {
 }
 
 # Must update arch toolchain and clean up some aur packages
+docker image prune -a -f
 docker pull recolic/pikaur
 for item in "${aur_upstreams_force_rebuild[@]}"; do
     rm -f "mirrors/recolic-aur/$item"*
