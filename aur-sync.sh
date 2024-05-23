@@ -22,7 +22,7 @@ aur_upstreams=(
     pikaur
     frpc
     frps
-    azure-cli
+#    azure-cli
     create_ap
     asix-ax88179-dkms
     snakesocks
@@ -40,7 +40,7 @@ aur_upstreams=(
 # Some packages must be rebuilt even if it doesn't upgrade. It applies for all python packages.
 aur_upstreams_force_rebuild=(
     pikaur
-    azure-cli
+#    azure-cli
 )
 
 repo_name=recolic-aur
