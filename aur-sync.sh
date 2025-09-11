@@ -19,10 +19,10 @@ repo_upstreams=(
 
 # Please place simple, important, SMALL packages first. Place error-prone packages last. 
 aur_upstreams=(
+    yay
     pikaur
     frpc
     frps
-#    azure-cli
     create_ap
     asix-ax88179-dkms
     snakesocks
@@ -40,7 +40,6 @@ aur_upstreams=(
 # Some packages must be rebuilt even if it doesn't upgrade. It applies for all python packages.
 aur_upstreams_force_rebuild=(
     pikaur
-#    azure-cli
 )
 
 repo_name=recolic-aur
@@ -52,7 +51,7 @@ function sync_aur () {
     # Use the external loop to force pikaur to skip failed packages. 
     for ele in "${aur_upstreams[@]}"; do
         # pikaur would skip if the package is already up-to-date. 
-        sudo docker run -i --cpus 1.2 --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $ele"
+        sudo timeout 30m docker run -i --cpus 1.2 --memory 3g --rm -v "$(pwd)/$build_outdir":/home/builder/.cache/pikaur/pkg recolic/pikaur      bash -c "chown builder -R /home/builder/.cache/pikaur/pkg && sudo -u builder pikaur -Syw --noconfirm $ele"
         [[ $? != 0 ]] && echo "WARNING: Failed to build $ele"
     done
 }
