@@ -1,3 +1,9 @@
+# deprecated
+
+AI created a much better alternative: <https://github.com/recolic/arch-builder>
+
+----
+
 # recolic's AUR mirror
 
 > https://recolic.net/s/mirrors
