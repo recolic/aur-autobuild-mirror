@@ -140,6 +140,8 @@ def materialize(package):
 
 
 def non_aur_packages(previous):
+    if not (ROOT / "pkgs/non-aur-upstreams.sh").exists():
+        return {}
     known = {name: checksum for package in previous["packages"].values() for name, checksum in package["files"].items()}
     selected = subprocess.check_output(["bash", str(ROOT / "pkgs/non-aur-upstreams.sh"), str(DIST)], input="\n".join(known), text=True).splitlines()
     packages = {}
