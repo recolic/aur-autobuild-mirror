@@ -2,8 +2,6 @@ yay
 asix-ax88179-dkms
 frpc
 frps
-#create_ap
-#pikaur
 #teamviewer
 #clion
 #clion-jre
@@ -12,3 +10,4 @@ shared-bootdir-helper
 oreo-cursors-git
 intune-portal-bin
 microsoft-identity-broker-bin
+linux-wifi-hotspot

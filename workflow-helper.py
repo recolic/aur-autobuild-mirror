@@ -40,6 +40,42 @@ def metadata(directory):
     return values
 
 
+def has_build_step(recipe):
+    return subprocess.run(["runuser", "-u", "builder", "--", "bash", "-c", "source ./PKGBUILD >/dev/null 2>&1 && declare -F build >/dev/null"], cwd=recipe).returncode == 0
+
+
+def abi_dependencies(name, info, recipe, providers, database):
+    is_any = info.get("arch") == ["any"]
+    if name.endswith(("-bin", "-dkms")) or (not is_any and not has_build_step(recipe)):
+        return []
+    runtime = sorted({dep for key in ("depends", "depends_x86_64") for dep in info.get(key, []) if re.split(r"[<>=]", dep)[0] not in providers})
+    direct = {re.split(r"[<>=]", dep)[0] for dep in runtime}
+    langs = {lang for lang in ("python", "perl", "ruby", "lua") if any(dep == lang or dep.startswith(f"{lang}-") for dep in direct)}
+    if not runtime or (is_any and not langs):
+        return []
+    resolved = run("pacman", "--config", PACMAN_CONFIG, "--dbpath", database, "-Sddp", "--noconfirm", "--print-format", "%r/%n", "--", *runtime, *sorted(langs))
+    targets = sorted(set(resolved.splitlines()))
+    if not targets or any(not re.fullmatch(r"[a-zA-Z0-9@._+-]+/[a-zA-Z0-9@._+-]+", target) for target in targets):
+        raise ValueError(f"{name}: unexpected pacman dependency resolution output: {resolved}")
+    abi = set()
+    pkg = ver = ""
+    for line in run("env", "LC_ALL=C", "pacman", "--config", PACMAN_CONFIG, "--dbpath", database, "-Si", "--", *targets).splitlines():
+        if line[:1].isspace() or ":" not in line:
+            continue
+        key, _, val = line.partition(":")
+        key, val = key.strip(), val.strip()
+        if key == "Name":
+            pkg = val
+        elif key == "Version":
+            ver = val.split(":", 1)[-1].split("-", 1)[0]
+        elif key == "Provides":
+            if not is_any:
+                abi.update(item for item in ([] if val == "None" else val.split()) if ".so=" in item)
+            if pkg in langs:
+                abi.add(f"{pkg}={'.'.join(ver.split('.')[:2])}")
+    return sorted(abi)
+
+
 def recipe_directories(work):
     directories = {path.name: path for path in sorted((ROOT / "pkgs").iterdir()) if path.is_dir()}
     passthru = ROOT / "pkgs/aur-passthru.txt"
@@ -146,7 +182,6 @@ def build():
         results = {}
         changed = False
         chroot = work / "chroot"
-        builder = [digest(Path(__file__)), digest(ROOT / ".github/workflows/archlinux-pkgs.yml")]
         while pending:
             progress = False
             for name in sorted(pending):
@@ -157,14 +192,10 @@ def build():
                 local = {providers[re.split(r"[<>=]", dep)[0]] for dep in dependencies if re.split(r"[<>=]", dep)[0] in providers} - {name}
                 if not local <= results.keys():
                     continue
-                official = sorted(dep for dep in dependencies if re.split(r"[<>=]", dep)[0] not in providers)
-                resolved = run("pacman", "--config", PACMAN_CONFIG, "--dbpath", database, "-Sp", "--noconfirm", "--print-format", "%n=%v", "--", "base-devel", "pacman", "git", *official)
-                versions = sorted(set(resolved.splitlines()))
-                if not versions or any(not re.fullmatch(r"[a-zA-Z0-9@._+-]+=\S+", version) for version in versions):
-                    raise ValueError(f"{name}: unexpected pacman dependency resolution output: {resolved}")
                 recipe = directories[name]
+                versions = abi_dependencies(name, info, recipe, providers, database)
                 inputs = {str(path.relative_to(recipe)): digest(path) for path in sorted(recipe.rglob("*")) if path.is_file() and ".git" not in path.relative_to(recipe).parts}
-                key = fingerprint({"recipe": inputs, "dependencies": versions, "local": {dep: results[dep]["fingerprint"] for dep in sorted(local)}, "builder": builder})
+                key = fingerprint({"recipe": inputs, "dependencies": versions, "local": {dep: results[dep]["fingerprint"] for dep in sorted(local)}})
                 old = previous["packages"].get(name)
                 if old and old["fingerprint"] == key and os.environ.get("FORCE") != "true":
                     print(f"{name}: unchanged", flush=True)
@@ -206,12 +237,6 @@ def build():
                     if not assets:
                         raise ValueError(f"{name}: build produced no .pkg.tar.zst packages")
                     for asset in assets:
-                        # Detect mirror skew between planning and building instead of recording incorrect state.
-                        buildinfo = subprocess.check_output(["bsdtar", "-xOf", str(asset), ".BUILDINFO"], text=True)
-                        installed = {line.removeprefix("installed = ").rsplit("-", 1)[0] for line in buildinfo.splitlines() if line.startswith("installed = ")}
-                        expected = {version.replace("=", "-", 1) for version in versions}
-                        if not expected <= installed:
-                            raise ValueError(f"{name}: build dependencies differ from plan; retry after mirrors synchronize: {expected - installed}")
                         shutil.copy2(asset, DIST / asset.name)
                     results[name] = {"fingerprint": key, "version": version, "revision": revision, "dependencies": versions, "local": sorted(closure), "files": {asset.name: digest(asset) for asset in assets}}
                 pending.remove(name)
