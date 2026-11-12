@@ -250,8 +250,6 @@ def publish():
     repository = os.environ["GITHUB_REPOSITORY"]
     if not release_exists():
         run("gh", "release", "create", TAG, "--repo", repository, "--target", os.environ["GITHUB_SHA"], "--title", "Arch package repository (automated, unsigned)", "--notes", "Auto-managed rolling archlinux repository.", "--prerelease", "--latest=false")
-    else:
-        run("gh", "release", "edit", TAG, "--repo", repository, "--prerelease", "--latest=false")
     for paths in (sorted(DIST.glob("*.pkg.tar.*")), sorted(DIST.glob("recoarch.*")), [DIST / "manifest.json"]):
         run("gh", "release", "upload", TAG, *paths, "--repo", repository, "--clobber")
     current = {name for package in manifest["packages"].values() for name in package["files"]}
