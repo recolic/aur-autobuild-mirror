@@ -1,0 +1,45 @@
+# Maintainer: Brice Vissière <dev at pystash dot me>
+pkgname=mdatp-bin
+_actual_pkgname=mdatp
+pkgver=101.26101.0000
+pkgrel=3
+pkgdesc='Microsoft Defender Advanced Threat Protection for Endpoints'
+arch=('x86_64')
+license=('custom: commercial')
+provides=("$_actual_pkgname=$pkgver")
+install=mdatp.install
+url=https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/linux-install-manually
+
+depends=(systemd)
+
+source=(
+  "https://packages.microsoft.com/debian/12/prod/pool/main/m/${_actual_pkgname}/${_actual_pkgname}_${pkgver}_amd64.deb"
+  mdatp-user.conf
+  mdatp-run-onboard-script.sh
+)
+
+sha256sums=(
+  'f2f8e1507499c9c3d36ad7e6eea439eb2ffccd46e2f1c9f6486dd898c177cfe9'
+  'd516a208a443dd35716250f9a9ef9b12f7e752ba91a213c70cb4592ab8c0435c'
+  'fe4666827dd48d5b74bbef68ad70a5192b42640b9fa60421f728cc078a677114')
+
+prepare() {
+  ar x "${_actual_pkgname}_${pkgver}_amd64.deb"
+  tar -zxvf data.tar.gz
+}
+
+package() {
+  install -d "${pkgdir}/opt/microsoft/${_actual_pkgname}"
+  install -d "${pkgdir}/var/opt/microsoft"
+  install -d "${pkgdir}/var/log/microsoft"
+  install -d "${pkgdir}/etc/opt/microsoft"
+  install -d "${pkgdir}/etc/systemd/system"
+  install -d "${pkgdir}/usr/bin"
+  install -Dm644 "$srcdir"/mdatp-user.conf "$pkgdir"/usr/lib/sysusers.d/mdatp.conf
+  install -Dm755 "$srcdir"/mdatp-run-onboard-script.sh "$pkgdir"/usr/bin/mdatp-run-onboard-script.sh
+  cp -r "${srcdir}/opt/microsoft/${_actual_pkgname}/"* "${pkgdir}/opt/microsoft/${_actual_pkgname}/"
+  install -m644 "${srcdir}/opt/microsoft/${_actual_pkgname}/conf/mdatp.service" "${pkgdir}/etc/systemd/system/mdatp.service"
+  ln -sf "/opt/microsoft/mdatp/sbin/wdavdaemonclient" "${pkgdir}/usr/bin/mdatp"
+  ## onboarding script won't work without this
+  ln -s "/opt/microsoft/mdatp" "${pkgdir}/etc/opt/microsoft/mdatp"
+}

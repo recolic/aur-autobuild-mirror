@@ -1,0 +1,15 @@
+# .install file for mdatp
+
+post_install() {
+    systemd-sysusers mdatp.conf
+    echo "
+*********
+  For Microsoft employee:
+    Run mdatp-run-onboard-script.sh to finish onboarding.
+*********
+"
+}
+
+post_remove() {
+    userdel -r mdatp
+}

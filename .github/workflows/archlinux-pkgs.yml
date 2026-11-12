@@ -1,0 +1,79 @@
+# created by GPT-5.6
+name: Arch Linux packages
+
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even if recipes and dependencies are unchanged
+        type: boolean
+        default: false
+  push:
+    paths:
+      - 'pkgs/**'
+      - 'workflow-helper.py'
+      - '.github/workflows/archlinux-pkgs.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archlinux-pkgs
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - name: Start Arch build environment
+        run: |
+          docker run --detach --name archlinux-builder --privileged --cgroupns=host \
+            --tmpfs /run --tmpfs /run/lock --volume /sys/fs/cgroup:/sys/fs/cgroup:rw \
+            --volume "$GITHUB_WORKSPACE:/workspace" --workdir /workspace --env USER=root archlinux:base-devel /sbin/init
+          docker exec archlinux-builder bash -euc '
+            for attempt in {1..30}; do
+              [[ -S /run/systemd/private ]] && break
+              sleep 1
+            done
+            state=$(systemctl is-system-running --wait) || [[ "$state" == degraded ]]
+            pacman -Syu --noconfirm --needed devtools git github-cli python
+            useradd --create-home builder
+            chown -R builder:builder pkgs
+          '
+      - name: Resolve dependencies and build changed packages
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: ${{ github.server_url }}
+          FORCE: ${{ inputs.force || github.event_name == 'pull_request' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+        run: |
+          export GH_HOST="${GH_HOST#https://}"
+          docker exec --env GH_TOKEN --env GH_HOST --env FORCE --env GITHUB_REPOSITORY --env GITHUB_SHA \
+            --env GITHUB_OUTPUT=/workspace/build-output --env GITHUB_STEP_SUMMARY=/workspace/build-summary \
+            archlinux-builder python workflow-helper.py build
+          cat build-output >> "$GITHUB_OUTPUT"
+          cat build-summary >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish binaries before repository metadata
+        if: steps.build.outputs.changed == 'true' && github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: ${{ github.server_url }}
+        run: |
+          export GH_HOST="${GH_HOST#https://}"
+          docker exec --env GH_TOKEN --env GH_HOST --env GITHUB_REPOSITORY --env GITHUB_SHA \
+            archlinux-builder python workflow-helper.py publish
+      - name: Remove build environment
+        if: always()
+        run: docker rm --force archlinux-builder

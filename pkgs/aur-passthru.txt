@@ -1,0 +1,14 @@
+yay
+asix-ax88179-dkms
+frpc
+frps
+#create_ap
+#pikaur
+#teamviewer
+#clion
+#clion-jre
+gnome-terminal-transparency
+shared-bootdir-helper
+oreo-cursors-git
+intune-portal-bin
+microsoft-identity-broker-bin

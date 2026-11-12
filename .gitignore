@@ -1,0 +1,8 @@
+src
+pkg
+*deb
+*.pkg.*
+dist/
+build-output
+build-summary
+__pycache__/
