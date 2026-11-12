@@ -16,6 +16,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parent
 DIST = Path("dist").resolve()
 TAG = "archlinux-packages"
+REPO_NAME = "recoarch"
 PACMAN_CONFIG = "/usr/share/devtools/pacman.conf.d/extra.conf"
 
 
@@ -260,9 +261,9 @@ def build():
             for package in results.values():
                 materialize(package)
             verify_assets(manifest)
-            run("repo-add", DIST / "recoarch.db.tar.gz", *sorted(DIST.glob("*.pkg.tar.*")))
+            run("repo-add", DIST / f"{REPO_NAME}.db.tar.gz", *sorted(DIST.glob("*.pkg.tar.*")))
             # Release uploads need regular files for pacman's database aliases.
-            for alias in ("recoarch.db", "recoarch.files"):
+            for alias in (f"{REPO_NAME}.db", f"{REPO_NAME}.files"):
                 (DIST / alias).unlink()
                 shutil.copyfile(DIST / f"{alias}.tar.gz", DIST / alias)
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as stream:
@@ -277,7 +278,7 @@ def publish():
     repository = os.environ["GITHUB_REPOSITORY"]
     if not release_exists():
         run("gh", "release", "create", TAG, "--repo", repository, "--target", os.environ["GITHUB_SHA"], "--title", "Arch package repository (automated, unsigned)", "--notes", "Auto-managed rolling archlinux repository.", "--prerelease", "--latest=false")
-    for paths in (sorted(DIST.glob("*.pkg.tar.*")), sorted(DIST.glob("recoarch.*")), [DIST / "manifest.json"]):
+    for paths in (sorted(DIST.glob("*.pkg.tar.*")), sorted(DIST.glob(f"{REPO_NAME}.*")), [DIST / "manifest.json"]):
         run("gh", "release", "upload", TAG, *paths, "--repo", repository, "--clobber")
     current = {name for package in manifest["packages"].values() for name in package["files"]}
     release = json.loads(run("gh", "api", f"repos/{repository}/releases/tags/{TAG}"))
